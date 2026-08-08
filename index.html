@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校招 Offer 薪资预测</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Google Analytics 4 — 替换 G-XXXXXXXXXX 为你的测量 ID 即可启用 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  // 改成你的 GA4 测量 ID 后，就能在 analytics.google.com 看到所有访问者的数据
+  const GA_ID = 'G-XXXXXXXXXX';
+  if (GA_ID !== 'G-XXXXXXXXXX') {
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date()); gtag('config', GA_ID);
+  }
+</script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --primary: #4F46E5; --primary-light: #818CF8; --primary-dark: #3730A3;
+  --success: #10B981; --danger: #EF4444; --bg: #F8FAFC; --card-bg: #FFFFFF;
+  --text: #1E293B; --text-secondary: #64748B; --text-light: #94A3B8; --border: #E2E8F0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06); --radius: 9px; --radius-lg: 13px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+
+.hero { text-align: center; padding: 42px 20px 30px; background: var(--card-bg); border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 3px; }
+.hero p { font-size: 14px; color: var(--text-secondary); }
+
+.container { max-width: 840px; margin: 26px auto 60px; padding: 0 20px; }
+
+.step-indicator { display: flex; justify-content: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+.step-dot { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; color: var(--text-light); font-weight: 500; cursor: pointer; min-width: 44px; }
+.step-dot .dot-circle { width: 24px; height: 24px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--text-secondary); transition: all 0.25s; }
+.step-dot.active .dot-circle { background: var(--primary); color: white; }
+.step-dot.active { color: var(--primary); }
+.step-dot.done .dot-circle { background: var(--success); color: white; }
+.step-dot.done { color: var(--success); }
+
+.card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 28px 24px; }
+.card-header { margin-bottom: 20px; }
+.card-header h2 { font-size: 18px; font-weight: 700; }
+.card-header .subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.option-card { display: flex; align-items: center; gap: 8px; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all 0.15s; font-size: 13px; font-weight: 500; background: var(--card-bg); }
+.option-card:hover { border-color: var(--primary-light); background: #F8F7FF; }
+.option-card.selected { border-color: var(--primary); background: #EEF2FF; }
+.option-card .radio { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; }
+.option-card.selected .radio { border-color: var(--primary); background: var(--primary); }
+.option-card.selected .radio::after { content: ''; display: block; width: 5px; height: 5px; background: white; border-radius: 50%; margin: 3px; }
+
+/* Stage block for degree-step school+major */
+.stage-block { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 16px 12px; margin-bottom: 14px; }
+.stage-block:last-child { margin-bottom: 0; }
+.stage-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.stage-label::before { content: ''; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; display: inline-block; }
+.stage-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 600px) { .stage-row { grid-template-columns: 1fr; } }
+.stage-col h4 { font-size: 11px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stage-col .form-grid { grid-template-columns: 1fr; }
+
+.btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 24px; }
+.btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled { background: #C7D2FE; cursor: not-allowed; }
+.btn-back { background: transparent; color: var(--text-secondary); border: 1.5px solid var(--border); }
+.btn-back:hover { border-color: var(--text-secondary); color: var(--text); }
+
+.progress-wrap { margin-bottom: 16px; }
+.progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.4s ease; }
+
+#result-section { display: none; }
+.result-hero { text-align: center; padding: 30px 20px; background: #FAFBFF; border: 1px solid #E8ECF4; border-radius: var(--radius-lg); margin-bottom: 16px; }
+.result-hero .salary-label { font-size: 13px; color: var(--text-secondary); }
+.result-hero .salary-number { font-size: 50px; font-weight: 900; color: var(--primary); letter-spacing: -2px; line-height: 1.15; }
+.result-hero .salary-number .unit { font-size: 19px; font-weight: 600; }
+.result-hero .salary-range { font-size: 13px; color: var(--text-secondary); margin-top: 5px; }
+.result-hero .salary-range .range-val { font-weight: 600; color: var(--text); }
+.result-hero .monthly-hint { font-size: 12px; color: var(--text-light); margin-top: 5px; }
+
+.result-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px; }
+.result-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px; text-align: center; }
+.result-card .card-icon { font-size: 18px; margin-bottom: 2px; }
+.result-card .card-title { font-size: 11px; color: var(--text-light); }
+.result-card .card-value { font-size: 14px; font-weight: 700; margin-top: 1px; }
+
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+@media (max-width: 650px) { .charts-row { grid-template-columns: 1fr; } }
+.chart-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+.chart-wrap { position: relative; height: 220px; display: flex; align-items: center; justify-content: center; }
+
+.factor-list { margin-top: 10px; }
+.factor-item { display: flex; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.factor-item:last-child { border-bottom: none; }
+.factor-item .factor-name { width: 80px; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+.factor-item .factor-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 0 8px; }
+.factor-item .factor-bar { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+.factor-item .factor-impact { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.factor-item .impact-up { color: var(--success); }
+.factor-item .impact-down { color: var(--danger); }
+.factor-item .impact-neutral { color: var(--text-light); }
+
+.restart-wrap { text-align: center; margin-top: 22px; }
+.footer { text-align: center; padding: 20px; color: var(--text-light); font-size: 12px; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 20px; border-radius: 8px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.fade-in { animation: fadeIn 0.4s ease; }
+
+/* ---- Admin Dashboard ---- */
+#admin-panel { display: none; max-width: 900px; margin: 20px auto; }
+#admin-panel .admin-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.admin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.admin-cards .ac { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: center; }
+.ac .ac-num { font-size: 32px; font-weight: 900; color: var(--primary); line-height: 1.1; }
+.ac .ac-label { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.admin-table th, .admin-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+.admin-table th { color: var(--text-light); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+.admin-bar-wrap { height: 20px; background: var(--border); border-radius: 4px; overflow: hidden; min-width: 100px; }
+.admin-bar { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.5s; }
+.admin-reset { text-align: right; margin-top: 16px; }
+.admin-reset button { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media print { .hero { border-bottom: 1px solid #ddd; } .btn-row, .restart-wrap, .step-indicator, .progress-wrap { display: none; } .card { box-shadow: none; border: 1px solid #ddd; } }
+</style>
+</head>
+<body>
+
+<section class="hero"><h1>校招 Offer 薪资预测</h1><p>综合学历、学校、专业、城市、行业、岗位、实习与学术成果，精准评估校招年薪</p></section>
+
+<div class="container">
+  <div class="step-indicator" id="step-indicator"></div>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div></div>
+
+  <div id="form-section">
+    <div class="card" id="form-card">
+      <div class="card-header"><h2 id="form-title"></h2><p class="subtitle" id="form-subtitle"></p></div>
+      <div id="form-body"></div>
+      <div class="btn-row">
+        <button class="btn btn-back" id="btn-prev" style="display:none">← 上一步</button>
+        <button class="btn btn-primary" id="btn-next">下一步 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="result-section">
+    <div class="card fade-in">
+      <div class="result-hero" id="result-hero"></div>
+      <div class="result-cards" id="result-cards"></div>
+      <div class="charts-row">
+        <div class="chart-card"><h3>因子影响力占比</h3><div class="chart-wrap"><canvas id="doughnut-chart"></canvas></div></div>
+        <div class="chart-card"><h3>同类岗位薪资对比</h3><div class="chart-wrap"><canvas id="bar-chart"></canvas></div></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:12px"><h3>逐因子影响拆解</h3><div class="factor-list" id="factor-list"></div></div>
+      <div class="restart-wrap"><button class="btn btn-primary" onclick="restart()">重新预测</button></div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">基于公开校招薪资数据建模 · 结果仅供参考<span style="margin-left:12px;opacity:0.5;cursor:pointer" onclick="showAdmin()">📊</span></footer>
+
+<!-- Admin Dashboard -->
+<div id="admin-panel">
+  <div class="admin-card">
+    <h2 style="margin-bottom:4px">📊 数据看板</h2>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:20px">本地统计（本浏览器数据）。如需跨用户真实访问量，请配置 GA4（见代码头部注释）</p>
+    <div class="admin-cards" id="admin-cards"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="admin-card" style="padding:20px">
+        <h3 style="font-size:14px;margin-bottom:12px">热门选择 TOP5</h3>
+        <div id="admin-top"></div>
+      </div>
+      <div class="admin-card" style="padding:20px">
+        <h3 style="font-size:14px;margin-bottom:12px">最近预测</h3>
+        <div id="admin-recent"></div>
+      </div>
+    </div>
+    <div class="admin-reset" style="display:none"></div>
+  </div>
+  <div style="text-align:center;padding:12px"><button class="btn btn-back" onclick="hideAdmin()">← 返回预测</button></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== DATA ======
+
+const stepLabels = ['学历层次', '学校与专业', '目标城市', '目标行业', '目标岗位', '目标公司', '实习经历', '加分项'];
+
+const eduOptions = [
+  { value: '本科', label: '本科' }, { value: '硕士', label: '硕士' }, { value: '博士', label: '博士' }
+];
+
+const schoolTierOptions = [
+  { value: '一本以下', label: '一本以下' }, { value: '双非一本', label: '双非一本' },
+  { value: '双一流', label: '双一流' }, { value: '211', label: '211' },
+  { value: '985', label: '985' }, { value: 'C9', label: 'C9' }, { value: '清北', label: '清北' }
+];
+
+const majorOptions = [
+  { value: '计算机科学/软件工程', label: '计算机 / 软件工程' },
+  { value: '人工智能/数据科学', label: '人工智能 / 数据科学' },
+  { value: '电子信息/通信', label: '电子信息 / 通信工程' },
+  { value: '数学/统计', label: '数学 / 统计学' },
+  { value: '金融/经济', label: '金融 / 经济学' },
+  { value: '工商管理', label: '工商管理' },
+  { value: '会计/财务管理', label: '会计 / 财务管理' },
+  { value: '法学', label: '法学' },
+  { value: '医学/药学', label: '医学 / 药学' },
+  { value: '机械/自动化', label: '机械 / 自动化' },
+  { value: '电气/能源', label: '电气 / 能源动力' },
+  { value: '土木/建筑', label: '土木 / 建筑学' },
+  { value: '市场营销/广告', label: '市场营销 / 广告学' },
+  { value: '人力资源管理', label: '人力资源管理' },
+  { value: '中文/新闻/传播', label: '中文 / 新闻 / 传播' },
+  { value: '其他理工科', label: '其他理工科' },
+  { value: '其他文科', label: '其他文科' }
+];
+
+const cityOptions = [
+  { value: '北京', label: '北京' }, { value: '上海', label: '上海' }, { value: '深圳', label: '深圳' },
+  { value: '广州', label: '广州' }, { value: '杭州', label: '杭州' }, { value: '成都', label: '成都' },
+  { value: '南京', label: '南京' }, { value: '苏州', label: '苏州' }, { value: '武汉', label: '武汉' },
+  { value: '西安', label: '西安' }, { value: '长沙', label: '长沙' }, { value: '重庆', label: '重庆' },
+  { value: '天津', label: '天津' }, { value: '合肥', label: '合肥' }, { value: '厦门', label: '厦门' },
+  { value: '其他新一线', label: '其他新一线' }, { value: '其他二线', label: '其他二线' }, { value: '三线及以下', label: '三线及以下' }
+];
+
+const industryOptions = [
+  { value: '互联网/IT', label: '互联网 / IT' }, { value: '金融', label: '金融 / 证券 / 投资' },
+  { value: '半导体/芯片', label: '半导体 / 芯片' }, { value: '游戏', label: '游戏' },
+  { value: '机器人/具身智能', label: '🤖 机器人 / 具身智能 / 智能制造' },
+  { value: '新能源/智能汽车', label: '🚗 新能源 / 智能汽车' },
+  { value: '新能源(光伏/锂电)', label: '🔋 新能源 (光伏 / 锂电 / 储能)' },
+  { value: '咨询', label: '管理咨询' }, { value: '通信', label: '通信 / 运营商' },
+  { value: '医疗健康', label: '医疗健康 / 制药' }, { value: '法律', label: '法律 / 知识产权' },
+  { value: '传统能源/环保', label: '传统能源 / 环保' }, { value: '传统汽车/出行', label: '传统汽车 / 出行' },
+  { value: '传统制造业/工业', label: '传统制造业 / 工业' }, { value: '房地产/建筑', label: '房地产 / 建筑' },
+  { value: '消费/零售/电商', label: '消费 / 零售 / 电商' }, { value: '广告/传媒', label: '广告 / 传媒' },
+  { value: '教育/培训', label: '教育 / 培训' }, { value: '物流/供应链', label: '物流 / 供应链' }
+];
+
+const positionOptions = [
+  { value: 'AI大模型/具身智能算法', label: 'AI 大模型 / 具身智能算法' },
+  { value: '普通算法（搜索/推荐/广告等）', label: '普通算法（搜索 / 推荐 / 广告等）' },
+  { value: '技术研发（前后端/全栈）', label: '技术研发（前后端/全栈）' },
+  { value: '数据分析/数据科学', label: '数据分析 / 数据科学' },
+  { value: '产品经理', label: '产品经理' }, { value: '运维/DevOps/SRE', label: '运维 / DevOps / SRE' },
+  { value: '测试/质量管理', label: '测试 / 质量管理' }, { value: 'UI/UX设计', label: 'UI / UX 设计' },
+  { value: '项目经理/PMO', label: '项目经理 / PMO' }, { value: '财务/会计/审计', label: '财务 / 会计 / 审计' },
+  { value: '市场营销/品牌', label: '市场营销 / 品牌' }, { value: '运营/用户增长', label: '运营 / 用户增长' },
+  { value: '销售/商务拓展', label: '销售 / 商务拓展' }, { value: '人力资源', label: '人力资源' },
+  { value: '法务/合规', label: '法务 / 合规' }, { value: '客户服务', label: '客户服务' }, { value: '行政/后勤', label: '行政 / 后勤' }
+];
+
+const companyOptions = [
+  { value: '头部大厂', label: '头部大厂 (BAT/字节/华为等)' },
+  { value: '中大型企业', label: '中大型企业 / 独角兽' },
+  { value: '外企', label: '外企' },
+  { value: '国企/央企', label: '国企 / 央企' },
+  { value: '中小企业', label: '中小企业' },
+  { value: '初创公司', label: '初创公司' }
+];
+
+const internCompanyOptions = [
+  { value: '无实习经历', label: '无实习经历' }, { value: '普通企业', label: '普通企业' },
+  { value: '中型企业/独角兽', label: '中型企业 / 独角兽' }, { value: '头部企业/大厂', label: '头部企业 / 大厂' }
+];
+const internCountOptions = [
+  { value: '0段', label: '0 段' }, { value: '1段', label: '1 段' },
+  { value: '2段', label: '2 段' }, { value: '3段及以上', label: '3 段及以上' }
+];
+const paperOptions = [ { value: '无', label: '无' }, { value: '普通期刊', label: '普通期刊' }, { value: '核心期刊/顶会', label: '核心期刊 / 顶会' } ];
+const competitionOptions = [ { value: '无', label: '无' }, { value: '区域赛获奖', label: '区域赛获奖' }, { value: '全国赛获奖', label: '全国赛获奖' }, { value: '国际赛获奖', label: 'ACM-ICPC 等国际赛获奖' } ];
+
+// ====== INTERNAL COEFFICIENTS ======
+
+const eduMultiplier = { '本科': 1.00, '硕士': 1.12, '博士': 1.22 };
+const schoolTierMul = { '一本以下': 0.82, '双非一本': 0.89, '双一流': 0.95, '211': 1.00, '985': 1.08, 'C9': 1.14, '清北': 1.22 };
+
+const cityBase = { '北京': 17000, '上海': 16500, '深圳': 16000, '广州': 13000, '杭州': 14000, '成都': 10800, '南京': 11800, '苏州': 11300, '武汉': 9800, '西安': 9300, '长沙': 9300, '重庆': 9800, '天津': 10300, '合肥': 9100, '厦门': 10300, '其他新一线': 10300, '其他二线': 7800, '三线及以下': 5800 };
+
+const industryMul = { '互联网/IT': 1.12, '金融': 1.15, '半导体/芯片': 1.14, '游戏': 1.08, '机器人/具身智能': 1.18, '新能源/智能汽车': 1.10, '新能源(光伏/锂电)': 1.12, '咨询': 1.10, '通信': 1.10, '医疗健康': 1.04, '法律': 1.08, '传统能源/环保': 1.00, '传统汽车/出行': 0.95, '传统制造业/工业': 0.88, '房地产/建筑': 0.88, '消费/零售/电商': 0.87, '广告/传媒': 0.88, '教育/培训': 0.84, '物流/供应链': 0.88 };
+
+// Industry-specific annual salary months (年终奖 + 基本月数)
+const industryMonths = {
+  '互联网/IT': 16, '金融': 15, '半导体/芯片': 15, '游戏': 15, '机器人/具身智能': 15, '新能源/智能汽车': 15, '新能源(光伏/锂电)': 14,
+  '咨询': 14, '通信': 14,
+  '医疗健康': 13, '法律': 13, '传统能源/环保': 13, '传统汽车/出行': 13, '消费/零售/电商': 13,
+  '传统制造业/工业': 12, '房地产/建筑': 12, '广告/传媒': 12, '教育/培训': 12, '物流/供应链': 12
+};
+
+// ====== POSITION-WEIGHTED FACTOR MODEL ======
+// Each position has: base multiplier + per-factor importance weight (0-1)
+// effective = 1 + weight × (raw - 1) — so same paper has different impact per role.
+const positionConfig = {
+  'AI大模型/具身智能算法':       { base:1.38, w:{paper:0.70, competition:0.50, internship:0.22, major:0.70} },
+  '普通算法（搜索/推荐/广告等）': { base:1.22, w:{paper:0.40, competition:0.40, internship:0.35, major:0.60} },
+  '技术研发（前后端/全栈）':     { base:1.15, w:{paper:0.08, competition:0.30, internship:0.60, major:0.50} },
+  '数据分析/数据科学':          { base:1.10, w:{paper:0.30, competition:0.35, internship:0.45, major:0.50} },
+  '产品经理':                   { base:1.00, w:{paper:0.03, competition:0.15, internship:0.60, major:0.30} },
+  '运维/DevOps/SRE':           { base:1.05, w:{paper:0.03, competition:0.20, internship:0.55, major:0.45} },
+  '测试/质量管理':              { base:0.98, w:{paper:0.03, competition:0.15, internship:0.50, major:0.40} },
+  'UI/UX设计':                 { base:1.00, w:{paper:0.00, competition:0.20, internship:0.65, major:0.35} },
+  '项目经理/PMO':               { base:1.02, w:{paper:0.03, competition:0.15, internship:0.50, major:0.28} },
+  '财务/会计/审计':             { base:0.90, w:{paper:0.03, competition:0.08, internship:0.45, major:0.60} },
+  '市场营销/品牌':              { base:0.90, w:{paper:0.00, competition:0.12, internship:0.58, major:0.35} },
+  '运营/用户增长':              { base:0.87, w:{paper:0.00, competition:0.12, internship:0.58, major:0.28} },
+  '销售/商务拓展':              { base:0.85, w:{paper:0.00, competition:0.08, internship:0.55, major:0.22} },
+  '人力资源':                   { base:0.82, w:{paper:0.00, competition:0.05, internship:0.40, major:0.45} },
+  '法务/合规':                  { base:1.02, w:{paper:0.08, competition:0.12, internship:0.40, major:0.70} },
+  '客户服务':                   { base:0.76, w:{paper:0.00, competition:0.03, internship:0.35, major:0.12} },
+  '行政/后勤':                  { base:0.73, w:{paper:0.00, competition:0.03, internship:0.25, major:0.12} }
+};
+
+// Raw factor values (wide range — position weights moderate them)
+const paperRaw = { '无':0.50, '普通期刊':0.85, '核心期刊/顶会':1.08 };
+const competitionRaw = { '无':1.00, '区域赛获奖':1.06, '全国赛获奖':1.12, '国际赛获奖':1.20 };
+
+// Combined internship lookup (company × count → single value, no double-multiplying)
+function getInternshipValue(company, count) {
+  const map = {
+    '无实习经历|0段':0.85, '无实习经历|1段':0.88,
+    '普通企业|0段':0.88, '普通企业|1段':0.92, '普通企业|2段':0.96, '普通企业|3段及以上':0.99,
+    '中型企业/独角兽|0段':0.91, '中型企业/独角兽|1段':0.96, '中型企业/独角兽|2段':1.00, '中型企业/独角兽|3段及以上':1.05,
+    '头部企业/大厂|0段':0.95, '头部企业/大厂|1段':1.07, '头部企业/大厂|2段':1.12, '头部企业/大厂|3段及以上':1.18
+  };
+  return map[company+'|'+count] || 1.00;
+}
+function wf(weight, raw) { return +(1 + weight * (raw - 1)).toFixed(4); }
+
+// Major match (narrow, position-weight moderated)
+const matchGrades = { core:{label:'科班',bonus:1.05}, semi:{label:'半科班',bonus:1.02}, related:{label:'有点相关',bonus:1.00}, unrelated:{label:'完全无关',bonus:0.95} };
+
+// Offer level — only meaningful for 风口行业 (互联网/芯片/游戏/机器人/新能源/金融/咨询)
+// For traditional industries, default to 固定薪资 (×1.00)
+const offerLevelMul = { '白菜价（常规录用）': 0.85, 'SP（优先录用）': 1.00, 'SSP（卓越录用）': 1.20, '固定薪资': 1.00 };
+const tieredIndustries = ['互联网/IT', '金融', '半导体/芯片', '游戏', '机器人/具身智能', '新能源/智能汽车', '新能源(光伏/锂电)', '咨询', '通信'];
+
+// Company type multiplier
+const companyMul = { '头部大厂': 1.25, '中大型企业': 1.05, '外企': 1.08, '国企/央企': 0.88, '中小企业': 0.85, '初创公司': 0.80 };
+
+// Market salary benchmarks (P25/P50/P75, 万/year) — baseline: 硕士+一线城市
+const marketBaseline = {
+  'AI大模型/具身智能算法':       [55, 70, 95],
+  '普通算法（搜索/推荐/广告等）': [42, 52, 68],
+  '技术研发（前后端/全栈）':     [30, 38, 50],
+  '数据分析/数据科学':          [26, 33, 43],
+  '产品经理':                   [24, 30, 40],
+  '运维/DevOps/SRE':           [22, 28, 36],
+  '测试/质量管理':              [20, 25, 33],
+  'UI/UX设计':                 [18, 24, 32],
+  '项目经理/PMO':               [20, 26, 35],
+  '财务/会计/审计':             [15, 20, 28],
+  '市场营销/品牌':              [16, 22, 30],
+  '运营/用户增长':              [15, 20, 27],
+  '销售/商务拓展':              [14, 18, 26],
+  '人力资源':                   [13, 17, 24],
+  '法务/合规':                  [18, 24, 32],
+  '客户服务':                   [10, 13, 18],
+  '行政/后勤':                  [9, 12, 17]
+};
+
+function getMarketBenchmarks(position, city, edu) {
+  const base = marketBaseline[position] || [15, 20, 28];
+  // City tier adjustment
+  const cAdj = { '北京':1.0, '上海':1.0, '深圳':1.0, '广州':0.95, '杭州':0.90, '成都':0.80, '南京':0.85, '苏州':0.85, '武汉':0.75, '西安':0.72, '长沙':0.72, '重庆':0.75, '天津':0.78, '合肥':0.72, '厦门':0.78, '其他新一线':0.75, '其他二线':0.65, '三线及以下':0.52 }[city] || 0.75;
+  const eAdj = { '本科':0.82, '硕士':1.0, '博士':1.15 }[edu] || 1.0;
+  return base.map(v => Math.round(v * cAdj * eAdj * 10) / 10);
+}
+
+const majorMatchTable = {
+  'AI大模型/具身智能算法':       { core:['计算机科学/软件工程','人工智能/数据科学','数学/统计'], semi:['电子信息/通信'], related:['其他理工科'] },
+  '普通算法（搜索/推荐/广告等）': { core:['计算机科学/软件工程','人工智能/数据科学','数学/统计'], semi:['电子信息/通信','金融/经济'], related:['其他理工科','工商管理'] },
+  '技术研发（前后端/全栈）':       { core:['计算机科学/软件工程'], semi:['人工智能/数据科学','电子信息/通信','数学/统计'], related:['其他理工科'] },
+  '数据分析/数据科学':            { core:['人工智能/数据科学','数学/统计'], semi:['计算机科学/软件工程','金融/经济'], related:['其他理工科','工商管理'] },
+  '产品经理':                     { semi:['计算机科学/软件工程','工商管理'], related:['市场营销/广告','人工智能/数据科学','其他理工科'] },
+  '运维/DevOps/SRE':             { core:['计算机科学/软件工程'], semi:['电子信息/通信'], related:['其他理工科'] },
+  '测试/质量管理':                { core:['计算机科学/软件工程'], semi:['电子信息/通信'], related:['其他理工科'] },
+  'UI/UX设计':                   { semi:['计算机科学/软件工程'], related:['市场营销/广告','中文/新闻/传播'] },
+  '项目经理/PMO':                 { semi:['工商管理','计算机科学/软件工程'], related:['其他理工科'] },
+  '财务/会计/审计':               { core:['会计/财务管理'], semi:['金融/经济'], related:['工商管理'] },
+  '市场营销/品牌':                { core:['市场营销/广告'], semi:['工商管理','中文/新闻/传播'], related:['金融/经济'] },
+  '运营/用户增长':                { semi:['市场营销/广告','工商管理'], related:['计算机科学/软件工程','中文/新闻/传播'] },
+  '销售/商务拓展':                { semi:['市场营销/广告','工商管理'], related:['金融/经济'] },
+  '人力资源':                     { core:['人力资源管理'], semi:['工商管理'], related:['中文/新闻/传播'] },
+  '法务/合规':                    { core:['法学'] },
+  '客户服务':                     { related:['市场营销/广告','工商管理','人力资源管理'] },
+  '行政/后勤':                    { related:['人力资源管理','工商管理','会计/财务管理'] }
+};
+
+function singleMajorMatch(position, major) {
+  const table = majorMatchTable[position];
+  if (!table) return matchGrades.unrelated;
+  if (table.core && table.core.includes(major)) return matchGrades.core;
+  if (table.semi && table.semi.includes(major)) return matchGrades.semi;
+  if (table.related && table.related.includes(major)) return matchGrades.related;
+  return matchGrades.unrelated;
+}
+
+function combinedMajorMatch(position, edu, ug, ms, ph) {
+  if (edu === '本科') return singleMajorMatch(position, ug);
+  if (edu === '硕士') {
+    const a = singleMajorMatch(position, ms);
+    const b = singleMajorMatch(position, ug);
+    return {
+      label: a.label + (b.label === '科班' || b.label === '半科班' ? '（本+硕）' : ''),
+      bonus: +(a.bonus * 0.7 + b.bonus * 0.3).toFixed(3)
+    };
+  }
+  const p = singleMajorMatch(position, ph);
+  const m = singleMajorMatch(position, ms);
+  const u = singleMajorMatch(position, ug);
+  const hasGood = (m.label === '科班' || m.label === '半科班' || u.label === '科班' || u.label === '半科班');
+  return {
+    label: p.label + (hasGood ? '（多阶段相关）' : ''),
+    bonus: +(p.bonus * 0.6 + m.bonus * 0.25 + u.bonus * 0.15).toFixed(3)
+  };
+}
+
+function combinedSchoolMul(edu, ugS, msS, phS) {
+  const u = schoolTierMul[ugS] || 1;
+  if (edu === '本科') return u;
+  const m = schoolTierMul[msS] || 1;
+  if (edu === '硕士') return +(m * 0.7 + u * 0.3).toFixed(3);
+  const p = schoolTierMul[phS] || 1;
+  return +(p * 0.6 + m * 0.25 + u * 0.15).toFixed(3);
+}
+
+// ====== STATE ======
+let currentStep = 0;
+let selections = { paper: '无', competition: '无' };
+let charts = {};
+
+// ====== RENDER ======
+function buildCards(containerId, options, selectedVal, key) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  options.forEach(opt => {
+    const div = document.createElement('div');
+    div.className = 'option-card' + (selectedVal === opt.value ? ' selected' : '');
+    div.innerHTML = `<span class="radio"></span><span class="label-text">${opt.label}</span>`;
+    div.addEventListener('click', () => { selections[key] = opt.value; renderStep(); });
+    grid.appendChild(div);
+  });
+}
+
+function renderStageBlock(stageLabel, schoolKey, majorKey, schoolVal, majorVal) {
+  const idS = 's_' + schoolKey, idM = 'm_' + majorKey;
+  return `<div class="stage-block">
+    <div class="stage-label">${stageLabel}</div>
+    <div class="stage-row">
+      <div class="stage-col"><h4>学校档次</h4><div class="form-grid" id="${idS}"></div></div>
+      <div class="stage-col"><h4>专业</h4><div class="form-grid" id="${idM}"></div></div>
+    </div>
+  </div>`;
+}
+
+function renderStep() {
+  const indicator = document.getElementById('step-indicator');
+  indicator.innerHTML = stepLabels.map((l, i) => {
+    let cls = 'step-dot'; if (i < currentStep) cls += ' done'; if (i === currentStep) cls += ' active';
+    return `<span class="${cls}"><span class="dot-circle">${i+1}</span>${l}</span>`;
+  }).join('');
+  indicator.querySelectorAll('.step-dot').forEach((dot, i) => {
+    dot.addEventListener('click', () => { if (i < currentStep) { currentStep = i; renderStep(); } });
+  });
+
+  const body = document.getElementById('form-body');
+  const prevBtn = document.getElementById('btn-prev');
+  const nextBtn = document.getElementById('btn-next');
+  prevBtn.style.display = currentStep === 0 ? 'none' : 'inline-flex';
+  nextBtn.textContent = currentStep === 7 ? '开始预测' : '下一步 →';
+  let valid = true;
+
+  // Step 1: 最高学历
+  if (currentStep === 0) {
+    document.getElementById('form-title').textContent = '最高学历';
+    document.getElementById('form-subtitle').textContent = '你的最高学历层次';
+    body.innerHTML = '<div class="form-grid" id="edu-opts"></div>';
+    buildCards('edu-opts', eduOptions, selections.education, 'education');
+    valid = !!selections.education;
+  }
+
+  // Step 2: 各阶段学校+专业
+  else if (currentStep === 1) {
+    document.getElementById('form-title').textContent = '各阶段学校与专业';
+    document.getElementById('form-subtitle').textContent = '请为每个学历阶段选择学校档次和专业背景';
+    const edu = selections.education;
+    let html = renderStageBlock('本科阶段', 'ug_school', 'ug_major', selections.ug_school, selections.ug_major);
+    if (edu === '硕士' || edu === '博士') {
+      html += renderStageBlock('硕士阶段', 'mas_school', 'mas_major', selections.mas_school, selections.mas_major);
+    }
+    if (edu === '博士') {
+      html += renderStageBlock('博士阶段', 'phd_school', 'phd_major', selections.phd_school, selections.phd_major);
+    }
+    body.innerHTML = html;
+
+    // Build all sub-grids
+    buildCards('s_ug_school', schoolTierOptions, selections.ug_school, 'ug_school');
+    buildCards('m_ug_major', majorOptions, selections.ug_major, 'ug_major');
+
+    if (edu === '硕士' || edu === '博士') {
+      buildCards('s_mas_school', schoolTierOptions, selections.mas_school, 'mas_school');
+      buildCards('m_mas_major', majorOptions, selections.mas_major, 'mas_major');
+    }
+    if (edu === '博士') {
+      buildCards('s_phd_school', schoolTierOptions, selections.phd_school, 'phd_school');
+      buildCards('m_phd_major', majorOptions, selections.phd_major, 'phd_major');
+    }
+
+    // Validate
+    if (edu === '本科') valid = !!(selections.ug_school && selections.ug_major);
+    else if (edu === '硕士') valid = !!(selections.ug_school && selections.ug_major && selections.mas_school && selections.mas_major);
+    else valid = !!(selections.ug_school && selections.ug_major && selections.mas_school && selections.mas_major && selections.phd_school && selections.phd_major);
+  }
+
+  // Step 3: 城市
+  else if (currentStep === 2) {
+    document.getElementById('form-title').textContent = '目标城市';
+    document.getElementById('form-subtitle').textContent = '不同城市的校招起薪差异显著';
+    body.innerHTML = '<div class="form-grid" id="o-city"></div>';
+    buildCards('o-city', cityOptions, selections.city, 'city');
+    valid = !!selections.city;
+  }
+
+  // Step 4: 行业
+  else if (currentStep === 3) {
+    document.getElementById('form-title').textContent = '目标行业';
+    document.getElementById('form-subtitle').textContent = '校招薪资的行业差距可达 30%–50%';
+    body.innerHTML = '<div class="form-grid" id="o-industry"></div>';
+    buildCards('o-industry', industryOptions, selections.industry, 'industry');
+    valid = !!selections.industry;
+  }
+
+  // Step 5: 岗位
+  else if (currentStep === 4) {
+    document.getElementById('form-title').textContent = '目标岗位';
+    document.getElementById('form-subtitle').textContent = '不同岗位的校招起薪天花板差异明显';
+    body.innerHTML = '<div class="form-grid" id="o-position"></div>';
+    buildCards('o-position', positionOptions, selections.position, 'position');
+    valid = !!selections.position;
+  }
+
+  // Step 6: 目标公司类型
+  else if (currentStep === 5) {
+    document.getElementById('form-title').textContent = '目标公司类型';
+    document.getElementById('form-subtitle').textContent = '大厂 vs 中小厂 vs 国企，同一岗位薪资差异显著';
+    body.innerHTML = '<div class="form-grid" id="o-company"></div>';
+    buildCards('o-company', companyOptions, selections.company, 'company');
+    valid = !!selections.company;
+  }
+
+  // Step 7: 实习
+  else if (currentStep === 6) {
+    document.getElementById('form-title').textContent = '实习经历';
+    document.getElementById('form-subtitle').textContent = '企业级别和段数两个维度综合评估';
+    body.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div><h4 style="font-size:11px;font-weight:600;color:var(--text-light);margin-bottom:6px">实习企业最高级别</h4><div class="form-grid" id="o-ic"></div></div>
+      <div><h4 style="font-size:11px;font-weight:600;color:var(--text-light);margin-bottom:6px">实习段数</h4><div class="form-grid" id="o-in"></div></div>
+    </div>`;
+    buildCards('o-ic', internCompanyOptions, selections.internCompany, 'internCompany');
+    buildCards('o-in', internCountOptions, selections.internCount, 'internCount');
+    valid = !!(selections.internCompany && selections.internCount);
+  }
+
+  // Step 8: 加分项
+  else if (currentStep === 7) {
+    document.getElementById('form-title').textContent = '附加加分项';
+    document.getElementById('form-subtitle').textContent = '论文、竞赛等学术与实践成果（可跳过）';
+    body.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div><h4 style="font-size:11px;font-weight:600;color:var(--text-light);margin-bottom:6px">论文发表</h4><div class="form-grid" id="o-paper"></div></div>
+      <div><h4 style="font-size:11px;font-weight:600;color:var(--text-light);margin-bottom:6px">竞赛获奖</h4><div class="form-grid" id="o-comp"></div></div>
+    </div>`;
+    buildCards('o-paper', paperOptions, selections.paper, 'paper');
+    buildCards('o-comp', competitionOptions, selections.competition, 'competition');
+    valid = true;
+  }
+
+  nextBtn.disabled = !valid;
+  document.getElementById('progress-fill').style.width = (currentStep / 7 * 100) + '%';
+}
+
+// ====== NAVIGATION ======
+function nextStep() {
+  if (currentStep < 7) { currentStep++; renderStep();
+    document.getElementById('form-card').classList.remove('fade-in');
+    void document.getElementById('form-card').offsetWidth;
+    document.getElementById('form-card').classList.add('fade-in');
+  } else { calculate(); }
+}
+function prevStep() { if (currentStep > 0) { currentStep--; renderStep(); } }
+
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timeout); t._timeout = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ====== ELIGIBILITY CHECK ======
+function checkEligibility(edu, schoolComposite, paper, comp, ic, inc, position, company, matchLabel, industry) {
+  const reasons = [];
+  const isTop = (company === '头部大厂');
+  const isMidTop = (company === '头部大厂' || company === '中大型企业');
+  const isForeign = (company === '外企');
+  const isGoodCompany = isMidTop || isForeign;
+
+  // --- AI大模型算法 (highest bar) ---
+  if (position === 'AI大模型/具身智能算法') {
+    if (isTop) {
+      if (edu === '本科') reasons.push('大模型算法岗·头部大厂要求硕士及以上学历');
+      if (schoolComposite < 1.0) reasons.push('大模型算法岗·头部大厂要求 211/双一流及以上学校');
+      if (paper !== '核心期刊/顶会') reasons.push('大模型算法岗·头部大厂要求顶会/核心期刊论文（人均 5-6 篇为基线）');
+      if (comp === '无' || comp === '区域赛获奖') reasons.push('大模型算法岗·头部大厂要求 ACM 银牌/全国赛及以上竞赛经历');
+      if (ic !== '头部企业/大厂') reasons.push('大模型算法岗·头部大厂要求至少 1 段大厂对口实习');
+      if (matchLabel === '完全无关') reasons.push('大模型算法岗要求科班或半科班专业背景');
+    } else if (isMidTop) {
+      if (edu === '本科') reasons.push('大模型算法岗要求硕士及以上学历');
+      if (schoolComposite < 0.95) reasons.push('大模型算法岗要求双一流及以上学校');
+      if (paper === '无') reasons.push('大模型算法岗要求至少普通期刊论文');
+    } else {
+      if (paper === '无') reasons.push('大模型算法岗要求至少有一定研究成果');
+    }
+  }
+
+  // --- 普通算法 ---
+  else if (position === '普通算法（搜索/推荐/广告等）') {
+    if (isTop) {
+      if (edu === '本科') reasons.push('头部大厂算法岗通常要求硕士及以上学历');
+      if (schoolComposite < 0.95) reasons.push('头部大厂算法岗要求双一流及以上学校');
+      if (paper === '无' && comp === '无') reasons.push('头部大厂算法岗要求至少论文或竞赛经历之一');
+      if (matchLabel === '完全无关') reasons.push('头部大厂算法岗要求科班或半科班专业背景');
+    } else if (isMidTop) {
+      if (schoolComposite < 0.89) reasons.push('中大型企业算法岗要求双非一本及以上学校');
+    }
+  }
+
+  // --- 技术研发 ---
+  else if (position === '技术研发（前后端/全栈）') {
+    if (isTop) {
+      if (schoolComposite < 0.82) reasons.push('头部大厂研发岗要求一本及以上学校');
+      if (ic === '无实习经历') reasons.push('头部大厂研发岗要求至少 1 段实习经历');
+    }
+  }
+
+  // --- 数据分析 ---
+  else if (position === '数据分析/数据科学') {
+    if (isTop) {
+      if (schoolComposite < 0.89) reasons.push('头部大厂数据分析岗要求双非一本及以上学校');
+      if (matchLabel === '完全无关') reasons.push('头部大厂数据分析岗要求理工/金融/商科相关专业');
+    }
+  }
+
+  // --- 产品经理 ---
+  else if (position === '产品经理') {
+    if (isTop) {
+      if (schoolComposite < 0.82) reasons.push('头部大厂产品岗要求一本及以上学校');
+    }
+  }
+
+  // --- 咨询 ---
+  else if (industry === '咨询') {
+    if (isGoodCompany) {
+      if (schoolComposite < 1.0) reasons.push('咨询行业（头部/外企）要求 211 及以上学校');
+      if (edu !== '硕士' && edu !== '博士') reasons.push('咨询行业（头部/外企）通常要求硕士及以上学历');
+      if (ic === '无实习经历') reasons.push('咨询行业要求至少 1 段实习经历');
+    }
+  }
+
+  // --- 金融 ---
+  else if (industry === '金融') {
+    if (isGoodCompany) {
+      if (schoolComposite < 0.95) reasons.push('金融行业（头部/外企）要求双一流及以上学校');
+      if (edu === '本科' && position !== '技术研发（前后端/全栈）') reasons.push('金融行业核心岗位通常要求硕士及以上学历');
+    }
+  }
+
+  // --- 法务 ---
+  else if (position === '法务/合规') {
+    if (isTop) {
+      if (matchLabel === '完全无关') reasons.push('法务岗要求法学专业背景');
+      if (schoolComposite < 0.89) reasons.push('头部大厂法务岗要求双非一本及以上学校');
+    }
+  }
+
+  // --- 财务/审计 ---
+  else if (position === '财务/会计/审计') {
+    if (isTop) {
+      if (matchLabel === '完全无关') reasons.push('头部大厂财务岗要求财会/金融/经济相关专业');
+    }
+  }
+
+  // --- 半导体/芯片 (industry check) ---
+  if (industry === '半导体/芯片' && isGoodCompany) {
+    if (position === '行政/后勤' || position === '客户服务' || position === '人力资源') {
+      // Non-tech positions in semiconductor are OK, lower bar
+    } else {
+      if (matchLabel === '完全无关' && position !== '销售/商务拓展' && position !== '市场营销/品牌') {
+        reasons.push('半导体/芯片行业技术岗要求理工科相关专业');
+      }
+    }
+  }
+
+  return { eligible: reasons.length === 0, reasons };
+}
+
+// ====== CALCULATE ======
+function calculate() {
+  const edu = selections.education;
+  const ugS = selections.ug_school, msS = selections.mas_school, phS = selections.phd_school;
+  const ugM = selections.ug_major, msM = selections.mas_major, phM = selections.phd_major;
+  const city = selections.city, industry = selections.industry, position = selections.position;
+  const ic = selections.internCompany, inc = selections.internCount;
+  const company = selections.company || '中小企业';
+  const paper = selections.paper || '无', comp = selections.competition || '无';
+
+  const base = cityBase[city] || 10000;
+  const eduMul = eduMultiplier[edu] || 1;
+  const schoolMul = combinedSchoolMul(edu, ugS, msS, phS);
+  const indMul = industryMul[industry] || 1;
+  const comMul = companyMul[company] || 1;
+  const cfg = positionConfig[position] || { base:1.0, w:{paper:0,competition:0,internship:0.3,major:0.3} };
+  const posBase = cfg.base;
+  const match = combinedMajorMatch(position, edu, ugM, msM, phM);
+  const iVal = getInternshipValue(ic, inc);
+  const pRaw = paperRaw[paper] || 1, cRaw = competitionRaw[comp] || 1;
+
+  // Weighted factors: 1 + weight × (raw - 1)
+  const pFac = wf(cfg.w.paper, pRaw);
+  const cFac = wf(cfg.w.competition, cRaw);
+  const iFac = wf(cfg.w.internship, iVal);
+  const mFac = wf(cfg.w.major, match.bonus);
+
+  const monthly = Math.round(base * eduMul * schoolMul * indMul * comMul * posBase * pFac * cFac * iFac * mFac);
+  let months = industryMonths[industry] || 12;
+  // 国企/央企的金融行业薪制偏低（银行 vs 券商差异）
+  if (industry === '金融' && (company === '国企/央企')) months = 13;
+  const annual = Math.round(monthly * months);
+  const lo = Math.round(annual * 0.85), hi = Math.round(annual * 1.22);
+
+  // Eligibility check — fail fast if below minimum bar
+  const eligibility = checkEligibility(edu, schoolMul, paper, comp, ic, inc, position, company, match.label, industry);
+
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('result-section').style.display = 'block';
+  document.querySelector('.step-indicator').style.display = 'none';
+  document.querySelector('.progress-wrap').style.display = 'none';
+
+  if (!eligibility.eligible) {
+    // Show ineligible warning
+    const fmt = n => n >= 10000 ? (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) + ' 万' : n.toLocaleString();
+    document.getElementById('result-hero').innerHTML = '<div class="salary-label">⚠️ 当前条件难以进入该岗位</div><div class="salary-number" style="font-size:22px;font-weight:700;color:var(--danger)">条件不达标</div><div class="salary-range" style="color:var(--text-secondary)">以下条件未能满足该岗位的准入门槛：</div>';
+    document.getElementById('result-cards').innerHTML = '';
+    document.getElementById('factor-list').innerHTML = eligibility.reasons.map(r => '<div class="factor-item"><span class="factor-impact impact-down" style="width:100%">✗ ' + r + '</span></div>').join('');
+    document.querySelector('.charts-row').style.display = 'none';
+    document.querySelectorAll('.chart-card')[2] && (document.querySelectorAll('.chart-card')[2].style.display = 'none');
+    return;
+  }
+  // Normal result below
+  document.querySelector('.charts-row').style.display = 'grid';
+  document.querySelectorAll('.chart-card')[2] && (document.querySelectorAll('.chart-card')[2].style.display = 'block');
+
+  // Track prediction
+  trackPredict(annual, city, industry, position, edu);
+
+  const fmt = n => n >= 10000 ? (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) + ' 万' : n.toLocaleString();
+  document.getElementById('result-hero').innerHTML = `
+    <div class="salary-label">预测年薪（税前）</div>
+    <div class="salary-number"><span class="unit">¥</span>${fmt(annual)}</div>
+    <div class="salary-range">参考区间 <span class="range-val">¥${fmt(lo)}</span> — <span class="range-val">¥${fmt(hi)}</span></div>
+    <div class="monthly-hint">≈ 月薪 ¥${(monthly / 1000).toFixed(1)}K（按 ${months} 薪折算年包）</div>`;
+
+  // Build school tier display string
+  let schoolStr = edu + ' · ' + (schoolTierOptions.find(o=>o.value===ugS)||{}).label||ugS||'';
+  if (edu==='硕士'||edu==='博士') schoolStr += ' → ' + ((schoolTierOptions.find(o=>o.value===msS)||{}).label||msS||'');
+  if (edu==='博士') schoolStr += ' → ' + ((schoolTierOptions.find(o=>o.value===phS)||{}).label||phS||'');
+
+  document.getElementById('result-cards').innerHTML = `
+    <div class="result-card"><div class="card-icon">📅</div><div class="card-title">估算月薪</div><div class="card-value">¥${(monthly/1000).toFixed(1)}K</div></div>
+    <div class="result-card"><div class="card-icon">💼</div><div class="card-title">薪制</div><div class="card-value">${months} 薪</div></div>
+    <div class="result-card"><div class="card-icon">🎓</div><div class="card-title">学历学校</div><div class="card-value" style="font-size:12px">${schoolStr}</div></div>
+    <div class="result-card"><div class="card-icon">🔗</div><div class="card-title">专业匹配</div><div class="card-value">${match.label}</div></div>`;
+
+  const factors = [
+    { name:'城市基准',   val:base/1000,     impact:'base',    desc:city },
+    { name:'学历层次',   val:eduMul,        impact:eduMul>=1?'up':'down', desc:edu },
+    { name:'学校档次',   val:schoolMul,     impact:schoolMul>=1?'up':'down', desc:schoolStr },
+    { name:'行业(系数)', val:indMul,        impact:indMul>=1?'up':'down', desc:industry },
+    { name:'行业(薪制)', val:months/12,     impact:months>12?'up':months<12?'down':'neutral', desc:months+'薪' },
+    { name:'公司类型',   val:comMul,        impact:comMul>=1?'up':'down', desc:company },
+    { name:'岗位基准',   val:posBase,       impact:posBase>=1?'up':'down', desc:position },
+    { name:'专业匹配',   val:mFac,          impact:mFac>=1?'up':'down', desc:match.label },
+    { name:'实习(综合)', val:iFac,          impact:iFac>=1?'up':'down', desc:ic+'·'+inc },
+    { name:'论文',       val:pFac,          impact:pFac>1?'up':pFac<1?'down':'neutral', desc:paper+' (权重'+Math.round(cfg.w.paper*100)+'%)' },
+    { name:'竞赛',       val:cFac,          impact:cFac>1?'up':cFac<1?'down':'neutral', desc:comp+' (权重'+Math.round(cfg.w.competition*100)+'%)' }
+  ];
+
+  const maxV = Math.max(...factors.map(f=>f.val));
+  document.getElementById('factor-list').innerHTML = factors.map(f=>{
+    const pct = (f.val/maxV)*100;
+    const color = f.impact==='up'?'var(--success)':f.impact==='down'?'var(--danger)':'var(--primary)';
+    const icon = f.impact==='up'?'↑':f.impact==='down'?'↓':'·';
+    const cls = f.impact==='up'?'impact-up':f.impact==='down'?'impact-down':'impact-neutral';
+    return `<div class="factor-item"><span class="factor-name">${f.name}</span><div class="factor-bar-wrap"><div class="factor-bar" style="width:${pct}%;background:${color}"></div></div><span class="factor-impact ${cls}">${icon} ${f.desc}</span></div>`;
+  }).join('');
+
+  setTimeout(()=>drawCharts(factors.filter(f=>f.impact!=='base'),annual,position,city,edu),200);
+}
+
+function drawCharts(fc, annual, position, city, edu) {
+  if (charts.d) charts.d.destroy(); if (charts.b) charts.b.destroy();
+  const td = fc.reduce((s,f)=>s+Math.abs(Math.log2(f.val)),0);
+  const cols = ['#4F46E5','#7C3AED','#EC4899','#F59E0B','#10B981','#3B82F6','#EF4444','#8B5CF6','#06B6D4'];
+  charts.d = new Chart(document.getElementById('doughnut-chart').getContext('2d'),{type:'doughnut',
+    data:{labels:fc.map(f=>f.name),datasets:[{data:fc.map(f=>+(Math.abs(Math.log2(f.val))/td*100).toFixed(1)),backgroundColor:cols.slice(0,fc.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:10,usePointStyle:true,pointStyleWidth:6,font:{size:11}}}}}
+  });
+  // Bar chart: real market benchmarks (not relative to prediction)
+  const [bp25, bp50, bp75] = getMarketBenchmarks(position, city, edu);
+  charts.b = new Chart(document.getElementById('bar-chart').getContext('2d'),{type:'bar',
+    data:{labels:['市场 P25','市场 P50\n(中位数)','你的预测值','市场 P75'],
+      datasets:[{data:[bp25, bp50, +(annual/1e4).toFixed(1), bp75],backgroundColor:['#C7D2FE','#818CF8','#4F46E5','#6366F1'],borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`¥${ctx.raw}万/年`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'万'}}}}
+  });
+}
+
+function restart() {
+  currentStep=0; selections={paper:'无',competition:'无'};
+  document.getElementById('form-section').style.display='block';
+  document.getElementById('result-section').style.display='none';
+  document.querySelector('.step-indicator').style.display='flex';
+  document.querySelector('.progress-wrap').style.display='block';
+  document.querySelector('.charts-row').style.display='grid';
+  if(charts.d){charts.d.destroy();charts.d=null;} if(charts.b){charts.b.destroy();charts.b=null;}
+  renderStep();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('form-section').style.display!=='none'){e.preventDefault();e.shiftKey?prevStep():nextStep();}
+});
+document.getElementById('btn-next').addEventListener('click',nextStep);
+document.getElementById('btn-prev').addEventListener('click',prevStep);
+
+// ====== ANALYTICS ======
+function loadStats(){ try{ return JSON.parse(localStorage.getItem('salary_stats')||'{"visits":0,"predictions":[],"cities":{},"industries":{},"positions":{},"edus":{}}'); }catch(e){ return {visits:0,predictions:[],cities:{},industries:{},positions:{},edus:{}}; } }
+function saveStats(s){ localStorage.setItem('salary_stats',JSON.stringify(s)); }
+function trackVisit(){ const s=loadStats(); s.visits++; const d=new Date(); s.lastVisit=d.toISOString(); saveStats(s); }
+function trackPredict(salary,city,industry,position,edu){ const s=loadStats(); s.predictions.unshift({time:new Date().toLocaleString(),salary,city,industry,position,edu,eligible:true}); if(s.predictions.length>20)s.predictions=s.predictions.slice(0,20); s.cities[city]=(s.cities[city]||0)+1; s.industries[industry]=(s.industries[industry]||0)+1; s.positions[position]=(s.positions[position]||0)+1; s.edus[edu]=(s.edus[edu]||0)+1; saveStats(s); }
+function resetStats(){ if(confirm('确定清除所有统计数据？')){ localStorage.removeItem('salary_stats'); hideAdmin(); } }
+
+function top5(obj){ return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,5); }
+function bar(val,max){ const pct=max>0?Math.round(val/max*100):0; return '<div class="admin-bar-wrap"><div class="admin-bar" style="width:'+pct+'%"></div></div>'; }
+
+function renderAdmin(){
+  const s=loadStats();
+  const totalPred=s.predictions.length;
+  const avgSal=totalPred>0?Math.round(s.predictions.reduce((a,p)=>a+p.salary,0)/totalPred):0;
+  const fmt=n=>n>=10000?(n/10000).toFixed(1)+'万':n;
+  document.getElementById('admin-cards').innerHTML=
+    '<div class="ac"><div class="ac-num">'+s.visits+'</div><div class="ac-label">页面访问</div></div>'+
+    '<div class="ac"><div class="ac-num">'+totalPred+'</div><div class="ac-label">预测次数</div></div>'+
+    '<div class="ac"><div class="ac-num">¥'+fmt(avgSal)+'</div><div class="ac-label">平均预测年包</div></div>'+
+    '<div class="ac"><div class="ac-num">'+new Date(s.lastVisit||Date.now()).toLocaleDateString()+'</div><div class="ac-label">最近访问</div></div>';
+
+  const top=[{label:'城市',data:top5(s.cities)},{label:'行业',data:top5(s.industries)},{label:'岗位',data:top5(s.positions)},{label:'学历',data:top5(s.edus)}];
+  const maxTop=Math.max(...top.flatMap(t=>t.data.map(d=>d[1])),1);
+  document.getElementById('admin-top').innerHTML=top.map(t=>{
+    const rows=t.data.map(([k,v])=>'<tr><td>'+t.label+'</td><td>'+k+'</td><td>'+v+'次</td><td>'+bar(v,maxTop)+'</td></tr>').join('');
+    return rows;
+  }).join('');
+
+  document.getElementById('admin-recent').innerHTML=totalPred>0?
+    '<table class="admin-table"><tr><th>时间</th><th>年包</th><th>城市</th><th>行业</th><th>岗位</th></tr>'+
+    s.predictions.slice(0,8).map(p=>'<tr><td>'+p.time+'</td><td>¥'+fmt(p.salary)+'</td><td>'+p.city+'</td><td>'+p.industry+'</td><td>'+p.position+'</td></tr>').join('')+'</table>'
+    :'<p style="color:var(--text-light);font-size:13px">暂无预测记录</p>';
+}
+
+function showAdmin(){ document.getElementById('form-section').style.display='none'; document.getElementById('result-section').style.display='none'; document.querySelector('.step-indicator').style.display='none'; document.querySelector('.progress-wrap').style.display='none'; document.querySelector('.hero').style.display='none'; document.getElementById('admin-panel').style.display='block'; renderAdmin(); }
+function hideAdmin(){ document.getElementById('admin-panel').style.display='none'; document.querySelector('.hero').style.display='block'; document.getElementById('form-section').style.display='block'; document.querySelector('.step-indicator').style.display='flex'; document.querySelector('.progress-wrap').style.display='block'; restart(); }
+
+// Auto-track visit on load
+trackVisit();
+// Auto-show admin if ?admin in URL
+if(location.search.includes('admin'))showAdmin();
+
+renderStep();
+</script>
+</body>
+</html>
