@@ -287,13 +287,14 @@ const positionOptions = [
 ];
 
 const companyOptions = [
-  { value: '头部大厂', label: '头部大厂 (BAT/字节/华为等)' },
-  { value: '中大型企业', label: '中大型企业 / 独角兽' },
-  { value: '外企', label: '外企' },
+  { value: '互联网/科技私企', label: '互联网 / 科技私企（腾讯/字节/阿里/小红书/拼多多/快手/京东/网易/百度等）' },
+  { value: '外企', label: '外企（Google/Microsoft/Amazon等，汇率优势）' },
   { value: '国企/央企', label: '国企 / 央企' },
-  { value: '中小企业', label: '中小企业' },
-  { value: '初创公司', label: '初创公司' }
+  { value: '初创公司', label: '初创公司 / 中小企业' }
 ];
+
+// Company type multiplier — 小红书/字节/腾讯在同一市场抢人，薪资自然对齐，硬分大小无意义
+const companyMul = { '互联网/科技私企': 1.10, '外企': 1.12, '国企/央企': 0.88, '初创公司': 0.82 };
 
 const internCompanyOptions = [
   { value: '无实习经历', label: '无实习经历' }, { value: '普通企业', label: '普通企业' },
@@ -312,6 +313,20 @@ const eduMultiplier = { '本科': 1.00, '硕士': 1.12, '博士': 1.22 };
 const schoolTierMul = { '一本以下': 0.82, '双非一本': 0.89, '双一流': 0.95, '211': 1.00, '985': 1.08, 'C9': 1.14, '清北': 1.22 };
 
 const cityBase = { '北京': 17000, '上海': 16500, '深圳': 16000, '广州': 13000, '杭州': 14000, '成都': 10800, '南京': 11800, '苏州': 11300, '武汉': 9800, '西安': 9300, '长沙': 9300, '重庆': 9800, '天津': 10300, '合肥': 9100, '厦门': 10300, '其他新一线': 10300, '其他二线': 7800, '三线及以下': 5800 };
+
+// City × Industry synergy — when a city is a known hub for a specific industry
+const cityIndustryBonus = {
+  '杭州|互联网/IT': 1.08,     // 阿里总部，互联网薪资对齐一线
+  '深圳|半导体/芯片': 1.06,    // 硬件产业链集中
+  '深圳|互联网/IT': 1.05,     // 腾讯总部
+  '上海|金融': 1.06,          // 金融中心
+  '成都|游戏': 1.06,           // 游戏产业聚集
+  '北京|互联网/IT': 1.04,     // 字节/百度/美团总部
+  '北京|金融': 1.04,          // 金融街
+  '合肥|半导体/芯片': 1.05,   // 长鑫存储等
+  '苏州|机器人/具身智能': 1.04,// 制造业升级
+  '广州|消费/零售/电商': 1.04, // SHEIN/唯品会
+};
 
 const industryMul = { '互联网/IT': 1.12, '金融': 1.15, '半导体/芯片': 1.14, '游戏': 1.08, '机器人/具身智能': 1.18, '新能源/智能汽车': 1.10, '新能源(光伏/锂电)': 1.12, '咨询': 1.10, '通信': 1.10, '医疗健康': 1.04, '法律': 1.08, '传统能源/环保': 1.00, '传统汽车/出行': 0.95, '传统制造业/工业': 0.88, '房地产/建筑': 0.88, '消费/零售/电商': 0.87, '广告/传媒': 0.88, '教育/培训': 0.84, '物流/供应链': 0.88 };
 
@@ -353,7 +368,7 @@ const competitionRaw = { '无':1.00, '区域赛获奖':1.06, '全国赛获奖':1
 // Combined internship lookup (company × count → single value, no double-multiplying)
 function getInternshipValue(company, count) {
   const map = {
-    '无实习经历|0段':0.85, '无实习经历|1段':0.88,
+    '无实习经历|0段':0.90, '无实习经历|1段':0.92,
     '普通企业|0段':0.88, '普通企业|1段':0.92, '普通企业|2段':0.96, '普通企业|3段及以上':0.99,
     '中型企业/独角兽|0段':0.91, '中型企业/独角兽|1段':0.96, '中型企业/独角兽|2段':1.00, '中型企业/独角兽|3段及以上':1.05,
     '头部企业/大厂|0段':0.95, '头部企业/大厂|1段':1.07, '头部企业/大厂|2段':1.12, '头部企业/大厂|3段及以上':1.18
@@ -370,8 +385,6 @@ const matchGrades = { core:{label:'科班',bonus:1.05}, semi:{label:'半科班',
 const offerLevelMul = { '白菜价（常规录用）': 0.85, 'SP（优先录用）': 1.00, 'SSP（卓越录用）': 1.20, '固定薪资': 1.00 };
 const tieredIndustries = ['互联网/IT', '金融', '半导体/芯片', '游戏', '机器人/具身智能', '新能源/智能汽车', '新能源(光伏/锂电)', '咨询', '通信'];
 
-// Company type multiplier
-const companyMul = { '头部大厂': 1.25, '中大型企业': 1.05, '外企': 1.08, '国企/央企': 0.88, '中小企业': 0.85, '初创公司': 0.80 };
 
 // Market salary benchmarks (P25/P50/P75, 万/year) — baseline: 硕士+一线城市
 const marketBaseline = {
@@ -578,7 +591,7 @@ function renderStep() {
   // Step 6: 目标公司类型
   else if (currentStep === 5) {
     document.getElementById('form-title').textContent = '目标公司类型';
-    document.getElementById('form-subtitle').textContent = '大厂 vs 中小厂 vs 国企，同一岗位薪资差异显著';
+    document.getElementById('form-subtitle').textContent = '按校招薪资档位选：看公司对你这个岗位能开多少钱，而非公司市值大小';
     body.innerHTML = '<div class="form-grid" id="o-company"></div>';
     buildCards('o-company', companyOptions, selections.company, 'company');
     valid = !!selections.company;
@@ -632,10 +645,10 @@ function showToast(msg) {
 // ====== ELIGIBILITY CHECK ======
 function checkEligibility(edu, schoolComposite, paper, comp, ic, inc, position, company, matchLabel, industry) {
   const reasons = [];
-  const isTop = (company === '头部大厂');
-  const isMidTop = (company === '头部大厂' || company === '中大型企业');
+  const isTop = (company === '互联网/科技私企');
+  const isMidTop = (company === '互联网/科技私企' || company === '外企');
   const isForeign = (company === '外企');
-  const isGoodCompany = isMidTop || isForeign;
+  const isGoodCompany = isMidTop;
 
   // --- AI大模型算法 (highest bar) ---
   if (position === 'AI大模型/具身智能算法') {
@@ -670,7 +683,7 @@ function checkEligibility(edu, schoolComposite, paper, comp, ic, inc, position, 
   else if (position === '技术研发（前后端/全栈）') {
     if (isTop) {
       if (schoolComposite < 0.82) reasons.push('头部大厂研发岗要求一本及以上学校');
-      if (ic === '无实习经历') reasons.push('头部大厂研发岗要求至少 1 段实习经历');
+      // 双211科班即可进入，实习影响薪资但不挡路
     }
   }
 
@@ -694,7 +707,6 @@ function checkEligibility(edu, schoolComposite, paper, comp, ic, inc, position, 
     if (isGoodCompany) {
       if (schoolComposite < 1.0) reasons.push('咨询行业（头部/外企）要求 211 及以上学校');
       if (edu !== '硕士' && edu !== '博士') reasons.push('咨询行业（头部/外企）通常要求硕士及以上学历');
-      if (ic === '无实习经历') reasons.push('咨询行业要求至少 1 段实习经历');
     }
   }
 
@@ -742,19 +754,19 @@ function calculate() {
   const ugM = selections.ug_major, msM = selections.mas_major, phM = selections.phd_major;
   const city = selections.city, industry = selections.industry, position = selections.position;
   const ic = selections.internCompany, inc = selections.internCount;
-  const company = selections.company || '中小企业';
+  const company = selections.company || '互联网/科技私企';
   const paper = selections.paper || '无', comp = selections.competition || '无';
 
   const base = cityBase[city] || 10000;
   const eduMul = eduMultiplier[edu] || 1;
   const schoolMul = combinedSchoolMul(edu, ugS, msS, phS);
-  // Over-qualification dampening: PhD premium shrinks on irrelevant positions
-  const effEdu = 1 + (eduMul - 1) * (cfg.edu || 1);
-  const effSchool = 1 + (schoolMul - 1) * (cfg.sch || 1);
   const indMul = industryMul[industry] || 1;
   const comMul = companyMul[company] || 1;
   const cfg = positionConfig[position] || { base:1.0, w:{paper:0,competition:0,internship:0.3,major:0.3} };
   const posBase = cfg.base;
+  // Over-qualification dampening: PhD premium shrinks on irrelevant positions
+  const effEdu = 1 + (eduMul - 1) * (cfg.edu || 1);
+  const effSchool = 1 + (schoolMul - 1) * (cfg.sch || 1);
   const match = combinedMajorMatch(position, edu, ugM, msM, phM);
   const iVal = getInternshipValue(ic, inc);
   const pRaw = paperRaw[paper] || 1, cRaw = competitionRaw[comp] || 1;
@@ -765,7 +777,9 @@ function calculate() {
   const iFac = wf(cfg.w.internship, iVal);
   const mFac = wf(cfg.w.major, match.bonus);
 
-  const monthly = Math.round(base * effEdu * effSchool * indMul * comMul * posBase * pFac * cFac * iFac * mFac);
+  // City × Industry synergy bonus
+  const synergyMul = cityIndustryBonus[city + '|' + industry] || 1.0;
+  const monthly = Math.round(base * effEdu * effSchool * indMul * comMul * posBase * pFac * cFac * iFac * mFac * synergyMul);
   let months = industryMonths[industry] || 12;
   // 国企/央企的金融行业薪制偏低（银行 vs 券商差异）
   if (industry === '金融' && (company === '国企/央企')) months = 13;
@@ -821,6 +835,7 @@ function calculate() {
     { name:'学校档次',   val:effSchool,     impact:effSchool>=1?'up':'down', desc:schoolStr+(cfg.sch<1?'（×'+Math.round(cfg.sch*100)+'%相关）':'') },
     { name:'行业(系数)', val:indMul,        impact:indMul>=1?'up':'down', desc:industry },
     { name:'行业(薪制)', val:months/12,     impact:months>12?'up':months<12?'down':'neutral', desc:months+'薪' },
+    { name:'城市×行业',  val:synergyMul,    impact:synergyMul>1?'up':'neutral', desc: synergyMul>1 ? city+'是'+industry+'重镇' : '-' },
     { name:'公司类型',   val:comMul,        impact:comMul>=1?'up':'down', desc:company },
     { name:'岗位基准',   val:posBase,       impact:posBase>=1?'up':'down', desc:position },
     { name:'专业匹配',   val:mFac,          impact:mFac>=1?'up':'down', desc:match.label },
