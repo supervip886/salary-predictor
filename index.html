@@ -294,26 +294,26 @@ const industryMonths = {
 };
 
 // ====== POSITION-WEIGHTED FACTOR MODEL ======
-// Each position has: base multiplier + per-factor importance weight (0-1)
-// effective = 1 + weight × (raw - 1) — so same paper has different impact per role.
+// Each position: base + factor weights + edu/school relevance (防止 over-qualification)
+// effective_edu = 1 + (eduMul - 1) × edu_rel  → 博士溢价在无关岗位自动衰减
 const positionConfig = {
-  'AI大模型/具身智能算法':       { base:1.38, w:{paper:0.70, competition:0.50, internship:0.22, major:0.70} },
-  '普通算法（搜索/推荐/广告等）': { base:1.58, w:{paper:0.15, competition:0.30, internship:0.40, major:0.60} },
-  '技术研发（前后端/全栈）':     { base:1.15, w:{paper:0.08, competition:0.30, internship:0.60, major:0.50} },
-  '数据分析/数据科学':          { base:1.10, w:{paper:0.30, competition:0.35, internship:0.45, major:0.50} },
-  '产品经理':                   { base:1.00, w:{paper:0.03, competition:0.15, internship:0.60, major:0.30} },
-  '运维/DevOps/SRE':           { base:1.05, w:{paper:0.03, competition:0.20, internship:0.55, major:0.45} },
-  '测试/质量管理':              { base:0.98, w:{paper:0.03, competition:0.15, internship:0.50, major:0.40} },
-  'UI/UX设计':                 { base:1.00, w:{paper:0.00, competition:0.20, internship:0.65, major:0.35} },
-  '项目经理/PMO':               { base:1.02, w:{paper:0.03, competition:0.15, internship:0.50, major:0.28} },
-  '财务/会计/审计':             { base:0.90, w:{paper:0.03, competition:0.08, internship:0.45, major:0.60} },
-  '市场营销/品牌':              { base:0.90, w:{paper:0.00, competition:0.12, internship:0.58, major:0.35} },
-  '运营/用户增长':              { base:0.87, w:{paper:0.00, competition:0.12, internship:0.58, major:0.28} },
-  '销售/商务拓展':              { base:0.85, w:{paper:0.00, competition:0.08, internship:0.55, major:0.22} },
-  '人力资源':                   { base:0.82, w:{paper:0.00, competition:0.05, internship:0.40, major:0.45} },
-  '法务/合规':                  { base:1.02, w:{paper:0.08, competition:0.12, internship:0.40, major:0.70} },
-  '客户服务':                   { base:0.76, w:{paper:0.00, competition:0.03, internship:0.35, major:0.12} },
-  '行政/后勤':                  { base:0.73, w:{paper:0.00, competition:0.03, internship:0.25, major:0.12} }
+  'AI大模型/具身智能算法':       { base:1.38, w:{paper:0.70, competition:0.50, internship:0.22, major:0.70}, edu:1.0, sch:1.0 },
+  '普通算法（搜索/推荐/广告等）': { base:1.58, w:{paper:0.15, competition:0.30, internship:0.40, major:0.60}, edu:0.90, sch:0.90 },
+  '技术研发（前后端/全栈）':     { base:1.15, w:{paper:0.08, competition:0.30, internship:0.60, major:0.50}, edu:0.70, sch:0.80 },
+  '数据分析/数据科学':          { base:1.10, w:{paper:0.30, competition:0.35, internship:0.45, major:0.50}, edu:0.80, sch:0.80 },
+  '产品经理':                   { base:1.00, w:{paper:0.03, competition:0.15, internship:0.60, major:0.30}, edu:0.50, sch:0.65 },
+  '运维/DevOps/SRE':           { base:1.05, w:{paper:0.03, competition:0.20, internship:0.55, major:0.45}, edu:0.55, sch:0.65 },
+  '测试/质量管理':              { base:0.98, w:{paper:0.03, competition:0.15, internship:0.50, major:0.40}, edu:0.50, sch:0.60 },
+  'UI/UX设计':                 { base:1.00, w:{paper:0.00, competition:0.20, internship:0.65, major:0.35}, edu:0.35, sch:0.45 },
+  '项目经理/PMO':               { base:1.02, w:{paper:0.03, competition:0.15, internship:0.50, major:0.28}, edu:0.55, sch:0.60 },
+  '财务/会计/审计':             { base:0.90, w:{paper:0.03, competition:0.08, internship:0.45, major:0.60}, edu:0.55, sch:0.60 },
+  '市场营销/品牌':              { base:0.90, w:{paper:0.00, competition:0.12, internship:0.58, major:0.35}, edu:0.35, sch:0.45 },
+  '运营/用户增长':              { base:0.87, w:{paper:0.00, competition:0.12, internship:0.58, major:0.28}, edu:0.35, sch:0.45 },
+  '销售/商务拓展':              { base:0.85, w:{paper:0.00, competition:0.08, internship:0.55, major:0.22}, edu:0.30, sch:0.40 },
+  '人力资源':                   { base:0.82, w:{paper:0.00, competition:0.05, internship:0.40, major:0.45}, edu:0.35, sch:0.45 },
+  '法务/合规':                  { base:1.02, w:{paper:0.08, competition:0.12, internship:0.40, major:0.70}, edu:0.70, sch:0.70 },
+  '客户服务':                   { base:0.76, w:{paper:0.00, competition:0.03, internship:0.35, major:0.12}, edu:0.20, sch:0.25 },
+  '行政/后勤':                  { base:0.73, w:{paper:0.00, competition:0.03, internship:0.25, major:0.12}, edu:0.20, sch:0.30 }
 };
 
 // Raw factor values (wide range — position weights moderate them)
@@ -718,6 +718,9 @@ function calculate() {
   const base = cityBase[city] || 10000;
   const eduMul = eduMultiplier[edu] || 1;
   const schoolMul = combinedSchoolMul(edu, ugS, msS, phS);
+  // Over-qualification dampening: PhD premium shrinks on irrelevant positions
+  const effEdu = 1 + (eduMul - 1) * (cfg.edu || 1);
+  const effSchool = 1 + (schoolMul - 1) * (cfg.sch || 1);
   const indMul = industryMul[industry] || 1;
   const comMul = companyMul[company] || 1;
   const cfg = positionConfig[position] || { base:1.0, w:{paper:0,competition:0,internship:0.3,major:0.3} };
@@ -732,7 +735,7 @@ function calculate() {
   const iFac = wf(cfg.w.internship, iVal);
   const mFac = wf(cfg.w.major, match.bonus);
 
-  const monthly = Math.round(base * eduMul * schoolMul * indMul * comMul * posBase * pFac * cFac * iFac * mFac);
+  const monthly = Math.round(base * effEdu * effSchool * indMul * comMul * posBase * pFac * cFac * iFac * mFac);
   let months = industryMonths[industry] || 12;
   // 国企/央企的金融行业薪制偏低（银行 vs 券商差异）
   if (industry === '金融' && (company === '国企/央企')) months = 13;
@@ -784,8 +787,8 @@ function calculate() {
 
   const factors = [
     { name:'城市基准',   val:base/1000,     impact:'base',    desc:city },
-    { name:'学历层次',   val:eduMul,        impact:eduMul>=1?'up':'down', desc:edu },
-    { name:'学校档次',   val:schoolMul,     impact:schoolMul>=1?'up':'down', desc:schoolStr },
+    { name:'学历层次',   val:effEdu,        impact:effEdu>=1?'up':'down', desc:edu+(cfg.edu<1?'（×'+Math.round(cfg.edu*100)+'%相关）':'') },
+    { name:'学校档次',   val:effSchool,     impact:effSchool>=1?'up':'down', desc:schoolStr+(cfg.sch<1?'（×'+Math.round(cfg.sch*100)+'%相关）':'') },
     { name:'行业(系数)', val:indMul,        impact:indMul>=1?'up':'down', desc:industry },
     { name:'行业(薪制)', val:months/12,     impact:months>12?'up':months<12?'down':'neutral', desc:months+'薪' },
     { name:'公司类型',   val:comMul,        impact:comMul>=1?'up':'down', desc:company },
