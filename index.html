@@ -298,7 +298,7 @@ const industryMonths = {
 // effective = 1 + weight × (raw - 1) — so same paper has different impact per role.
 const positionConfig = {
   'AI大模型/具身智能算法':       { base:1.38, w:{paper:0.70, competition:0.50, internship:0.22, major:0.70} },
-  '普通算法（搜索/推荐/广告等）': { base:1.22, w:{paper:0.40, competition:0.40, internship:0.35, major:0.60} },
+  '普通算法（搜索/推荐/广告等）': { base:1.58, w:{paper:0.15, competition:0.30, internship:0.40, major:0.60} },
   '技术研发（前后端/全栈）':     { base:1.15, w:{paper:0.08, competition:0.30, internship:0.60, major:0.50} },
   '数据分析/数据科学':          { base:1.10, w:{paper:0.30, competition:0.35, internship:0.45, major:0.50} },
   '产品经理':                   { base:1.00, w:{paper:0.03, competition:0.15, internship:0.60, major:0.30} },
@@ -346,7 +346,7 @@ const companyMul = { '头部大厂': 1.25, '中大型企业': 1.05, '外企': 1.
 // Market salary benchmarks (P25/P50/P75, 万/year) — baseline: 硕士+一线城市
 const marketBaseline = {
   'AI大模型/具身智能算法':       [55, 70, 95],
-  '普通算法（搜索/推荐/广告等）': [42, 52, 68],
+  '普通算法（搜索/推荐/广告等）': [48, 58, 76],
   '技术研发（前后端/全栈）':     [30, 38, 50],
   '数据分析/数据科学':          [26, 33, 43],
   '产品经理':                   [24, 30, 40],
