@@ -629,8 +629,7 @@ function checkEligibility(edu, schoolComposite, paper, comp, ic, inc, position, 
   else if (position === '普通算法（搜索/推荐/广告等）') {
     if (isTop) {
       if (edu === '本科') reasons.push('头部大厂算法岗通常要求硕士及以上学历');
-      if (schoolComposite < 0.95) reasons.push('头部大厂算法岗要求双一流及以上学校');
-      if (paper === '无' && comp === '无') reasons.push('头部大厂算法岗要求至少论文或竞赛经历之一');
+      if (schoolComposite < 1.0) reasons.push('头部大厂算法岗要求 211/双一流及以上学校');
       if (matchLabel === '完全无关') reasons.push('头部大厂算法岗要求科班或半科班专业背景');
     } else if (isMidTop) {
       if (schoolComposite < 0.89) reasons.push('中大型企业算法岗要求双非一本及以上学校');
